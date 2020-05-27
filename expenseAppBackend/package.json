@@ -2,7 +2,7 @@
   "name": "expense-app-backend",
   "version": "1.0.0",
   "description": "Expense app backend",
-  "main": "index.js",
+  "main": "start-server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },

@@ -42,7 +42,7 @@ async function addExpense(expense) {
         ${expense.vatRate},
         '${expense.currency}',
         ${expense.receiptNumber},
-        '${convertToMySQLDateTime(expense.receiptDate)}'
+        '${convertToMySQLDate(expense.receiptDate)}'
     );`;
     return sendQuery(query);
 }
@@ -62,10 +62,12 @@ function getExpenses(expenseFilter) {
         WHERE
         `;
         if (expenseFilter.organizationName) {
-            query += `OrganizationName = '${expenseFilter.organizationName}' AND `;
+            query += `OrganizationName LIKE '%${expenseFilter.organizationName}%' AND `;
         }
         if (expenseFilter.totalAmount) {
-            query += `TotalAmount = ${expenseFilter.totalAmount} AND `;
+            const min = expenseFilter.totalAmount.min;
+            const max = expenseFilter.totalAmount.max;
+            query += `TotalAmount BETWEEN ${min} AND ${max} AND `;
         }
         if (expenseFilter.vatRate) {
             query += `VATRate = ${expenseFilter.vatRate} AND `;
@@ -74,7 +76,9 @@ function getExpenses(expenseFilter) {
             query += `Currency = '${expenseFilter.currency}' AND `;
         }
         if (expenseFilter.receiptDate) {
-            query += `ReceiptDate = '${convertToMySQLDateTime(expenseFilter.receiptDate)}' AND `;
+            const earliestDate = convertToMySQLDate(expenseFilter.receiptDate.earliest);
+            const latestDate = convertToMySQLDate(expenseFilter.receiptDate.latest);
+            query += `ReceiptDate BETWEEN CAST('${earliestDate}' AS DATE) AND CAST('${latestDate}' AS DATE) AND `;
         }
         query = query.substr(0, query.length - 5);
     }
@@ -90,7 +94,7 @@ function updateExpense(receiptNumber, updatedExpense) {
             VATAmount = ${updatedExpense.vatAmount},
             VATRate = ${updatedExpense.vatRate},
             Currency = '${updatedExpense.currency}',
-            ReceiptDate = '${convertToMySQLDateTime(updatedExpense.receiptDate)}'
+            ReceiptDate = '${convertToMySQLDate(updatedExpense.receiptDate)}'
         WHERE ReceiptNumber = ${receiptNumber};`;
     return sendQuery(query);
 }
@@ -100,9 +104,9 @@ function deleteExpense(receiptNumber) {
     return sendQuery(query);
 }
 
-function convertToMySQLDateTime(date) {
+function convertToMySQLDate(date) {
     date = new Date(date);
-    return date.toISOString().slice(0, 19).replace("T", " ");
+    return date.toISOString().slice(0, 10);
 }
 
 module.exports = {addExpense, getExpenses, updateExpense, deleteExpense};

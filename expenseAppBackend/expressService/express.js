@@ -5,13 +5,14 @@ app.use(express.json());
 
 function createExpenseHandler() {
     app.post("/expense/create", (request, response) => {
-        const expense = request.body.expense;
-        if (!isExpenseDataValidForCreate(expense)) {
+        const body = request.body;
+        if (!isExpenseDataValidForCreate(body)) {
             response.status(400);
             response.send({
                 status: "Missing property in the request object!"
             });
         } else {
+            const expense = body.expense;
             if (!isExpenseValid(expense)) {
                 response.status(400);
                 response.send({
@@ -26,7 +27,8 @@ function createExpenseHandler() {
                         })
                     }
                 ).catch(
-                    () => {
+                    (error) => {
+                        console.log(error);
                         response.status(500);
                         response.send({
                             status: "Failed to create expense!"
@@ -40,21 +42,22 @@ function createExpenseHandler() {
 
 function getExpensesHandler() {
     app.get("/expense/get", (request, response) => {
-        const expenseFilter = request.body.expenseFilter;
-
-        if (!isExpenseFilterValid(expenseFilter)) {
+        const body = request.body;
+        if (!isExpenseFilterValid(body)) {
             response.status(400);
             response.send({
                 status: "Missing property in the request object!"
             });
         } else {
+            const expenseFilter = body.expenseFilter;
             database.getExpenses(expenseFilter).then(
                 (result) => {
                     response.status(200);
                     response.send(result);
                 }
             ).catch(
-                () => {
+                (error) => {
+                    console.log(error);
                     response.status(500);
                     response.send({
                         status: "Failed to get expenses!"
@@ -68,13 +71,14 @@ function getExpensesHandler() {
 function updateExpenseHandler() {
     app.put("/expense/update", (request, response) => {
         const receiptNumber = request.headers.receiptNumber;
-        const expense = request.body.updatedExpense;
-        if (!isExpenseDataValidForUpdate(expense)) {
+        const body = request.body;
+        if (!isExpenseDataValidForUpdate(body)) {
             response.status(400);
             response.send({
                 status: "Missing property in the request object!"
             });
         } else {
+            const expense = body.expense;
             if (!isExpenseValid(expense)) {
                 response.status(400);
                 response.send({
@@ -143,30 +147,39 @@ function isExpenseValid(expense) {
     isReceiptNumberValid(expense.receiptNumber));
 }
 
-function isExpenseDataValidForCreate(expense) {
+function isExpenseDataValidForCreate(body) {
+    if (!body.expense) {
+        return false;
+    }
     return (
-        isExpenseDataValidForUpdate(expense) &&
-        expense.receiptNumber);
+        isExpenseDataValidForUpdate(body) &&
+        body.expense.receiptNumber);
 }
 
-function isExpenseDataValidForUpdate(expense) {
+function isExpenseDataValidForUpdate(body) {
+    if (!body.expense) {
+        return false;
+    }
     return (
-        expense.organizationName &&
-        expense.totalAmount &&
-        expense.vatAmount &&
-        expense.vatRate &&
-        expense.currency &&
-        expense.receiptDate);
+        body.expense.organizationName &&
+        body.expense.totalAmount &&
+        body.expense.vatAmount &&
+        body.expense.vatRate &&
+        body.expense.currency &&
+        body.expense.receiptDate);
 }
 
-function isExpenseFilterValid(expenseFilter) {
+function isExpenseFilterValid(body) {
+    if (!body.expenseFilter) {
+        return false;
+    }
     return (
-        expenseFilter.receiptNumber ||
-        expenseFilter.organizationName ||
-        expenseFilter.totalAmount ||
-        expenseFilter.vatRate ||
-        expenseFilter.currency ||
-        expenseFilter.receiptDate);
+        body.expenseFilter.receiptNumber ||
+        body.expenseFilter.organizationName ||
+        (body.expenseFilter.totalAmountMin && body.expenseFilter.totalAmountMax) ||
+        body.expenseFilter.vatRate ||
+        body.expenseFilter.currency ||
+        (body.expenseFilter.receiptDateEarliest && body.expenseFilter.receiptDateLatest));
 }
 
 function isReceiptNumberValid(receiptNumber) {
