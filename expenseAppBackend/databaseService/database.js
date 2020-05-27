@@ -40,7 +40,7 @@ async function addExpense(expense) {
         ${expense.totalAmount},
         ${expense.vatAmount},
         ${expense.vatRate},
-        '${expense.currencyType}',
+        '${expense.currency}',
         ${expense.receiptNumber},
         '${expense.receiptDate}'
     );`;
@@ -70,8 +70,8 @@ function getExpenses(expenseFilter) {
         if (expenseFilter.vatRate) {
             query += `VATRate = ${expenseFilter.vatRate} AND `;
         }
-        if (expenseFilter.currencyType) {
-            query += `Currency = '${expenseFilter.currencyType}' AND `;
+        if (expenseFilter.currency) {
+            query += `Currency = '${expenseFilter.currency}' AND `;
         }
         query = query.substr(0, query.length - 5);
     }
@@ -86,7 +86,7 @@ function updateExpense(receiptNumber, updatedExpense) {
             TotalAmount = ${updatedExpense.totalAmount},
             VATAmount = ${updatedExpense.vatAmount},
             VATRate = ${updatedExpense.vatRate},
-            Currency = '${updatedExpense.currencyType}'
+            Currency = '${updatedExpense.currency}'
         WHERE ReceiptNumber = ${receiptNumber};`;
     return sendQuery(query);
 }
