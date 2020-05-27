@@ -31,7 +31,7 @@ async function addExpense(expense) {
         VATAmount,
         VATRate,
         Currency,
-        ReceiptNo,
+        ReceiptNumber,
         ReceiptDate
         )
     VALUES
@@ -42,7 +42,7 @@ async function addExpense(expense) {
         ${expense.vatRate},
         '${expense.currency}',
         ${expense.receiptNumber},
-        '${expense.receiptDate}'
+        '${convertToMySQLDateTime(expense.receiptDate)}'
     );`;
     return sendQuery(query);
 }
@@ -50,11 +50,11 @@ async function addExpense(expense) {
 function getExpenses(expenseFilter) {
 
     let query;
-    if (expenseFilter.receiptNo) {
+    if (expenseFilter.receiptNumber) {
         query = `
         SELECT * FROM Expense
         WHERE
-            ReceiptNo = ${expenseFilter.receiptNo}
+            ReceiptNumber = ${expenseFilter.receiptNumber}
         ;`;
     } else {
         query = `
@@ -73,6 +73,9 @@ function getExpenses(expenseFilter) {
         if (expenseFilter.currency) {
             query += `Currency = '${expenseFilter.currency}' AND `;
         }
+        if (expenseFilter.receiptDate) {
+            query += `ReceiptDate = '${convertToMySQLDateTime(expenseFilter.receiptDate)}' AND `;
+        }
         query = query.substr(0, query.length - 5);
     }
     return sendQuery(query);
@@ -86,7 +89,8 @@ function updateExpense(receiptNumber, updatedExpense) {
             TotalAmount = ${updatedExpense.totalAmount},
             VATAmount = ${updatedExpense.vatAmount},
             VATRate = ${updatedExpense.vatRate},
-            Currency = '${updatedExpense.currency}'
+            Currency = '${updatedExpense.currency}',
+            ReceiptDate = '${convertToMySQLDateTime(updatedExpense.receiptDate)}'
         WHERE ReceiptNumber = ${receiptNumber};`;
     return sendQuery(query);
 }
@@ -94,6 +98,11 @@ function updateExpense(receiptNumber, updatedExpense) {
 function deleteExpense(receiptNumber) {
     const query = `DELETE FROM Expense WHERE ReceiptNumber = ${receiptNumber};`;
     return sendQuery(query);
+}
+
+function convertToMySQLDateTime(date) {
+    date = new Date(date);
+    return date.toISOString().slice(0, 19).replace("T", " ");
 }
 
 module.exports = {addExpense, getExpenses, updateExpense, deleteExpense};
