@@ -36,13 +36,13 @@ async function addExpense(expense) {
         )
     VALUES
         (
-        '${expense.organizationName}',
-        ${expense.totalAmount},
-        ${expense.vatAmount},
-        ${expense.vatRate},
+        '${expense.organizationname}',
+        ${expense.totalamount},
+        ${expense.vatamount},
+        ${expense.vatrate},
         '${expense.currency}',
-        ${expense.receiptNumber},
-        '${convertToMySQLDate(expense.receiptDate)}'
+        ${expense.receiptnumber},
+        '${convertToMySQLDate(expense.receiptdate)}'
     );`;
     return sendQuery(query);
 }
@@ -50,34 +50,38 @@ async function addExpense(expense) {
 function getExpenses(expenseFilter) {
 
     let query;
-    if (expenseFilter.receiptNumber) {
-        query = `
-        SELECT * FROM Expense
-        WHERE
-            ReceiptNumber = ${expenseFilter.receiptNumber}
-        ;`;
+    if (expenseFilter.receiptnumber) {
+        if (expenseFilter.receiptnumber === "*") {
+            query = `SELECT * FROM Expense;`;
+        } else {
+            query = `
+                SELECT * FROM Expense
+                WHERE
+                    ReceiptNumber = ${expenseFilter.receiptnumber}
+            ;`;
+        }
     } else {
         query = `
         SELECT * FROM Expense
         WHERE
         `;
-        if (expenseFilter.organizationName) {
-            query += `OrganizationName LIKE '%${expenseFilter.organizationName}%' AND `;
+        if (expenseFilter.organizationname) {
+            query += `OrganizationName LIKE '%${expenseFilter.organizationname}%' AND `;
         }
-        if (expenseFilter.totalAmount) {
-            const min = expenseFilter.totalAmount.min;
-            const max = expenseFilter.totalAmount.max;
+        if (expenseFilter.totalamount) {
+            const min = expenseFilter.totalamountmin;
+            const max = expenseFilter.totalamountmax;
             query += `TotalAmount BETWEEN ${min} AND ${max} AND `;
         }
         if (expenseFilter.vatRate) {
-            query += `VATRate = ${expenseFilter.vatRate} AND `;
+            query += `VATRate = ${expenseFilter.vatrate} AND `;
         }
         if (expenseFilter.currency) {
             query += `Currency = '${expenseFilter.currency}' AND `;
         }
-        if (expenseFilter.receiptDate) {
-            const earliestDate = convertToMySQLDate(expenseFilter.receiptDate.earliest);
-            const latestDate = convertToMySQLDate(expenseFilter.receiptDate.latest);
+        if (expenseFilter.receiptdate) {
+            const earliestDate = convertToMySQLDate(expenseFilter.receiptdateearliest);
+            const latestDate = convertToMySQLDate(expenseFilter.receiptdatelatest);
             query += `ReceiptDate BETWEEN CAST('${earliestDate}' AS DATE) AND CAST('${latestDate}' AS DATE) AND `;
         }
         query = query.substr(0, query.length - 5);
@@ -85,17 +89,17 @@ function getExpenses(expenseFilter) {
     return sendQuery(query);
 }
 
-function updateExpense(receiptNumber, updatedExpense) {
+function updateExpense(updatedExpense) {
     const query = `
         UPDATE Expense
         SET
-            OrganizationName = '${updatedExpense.organizationName}',
-            TotalAmount = ${updatedExpense.totalAmount},
-            VATAmount = ${updatedExpense.vatAmount},
-            VATRate = ${updatedExpense.vatRate},
+            OrganizationName = '${updatedExpense.organizationname}',
+            TotalAmount = ${updatedExpense.totalamount},
+            VATAmount = ${updatedExpense.vatamount},
+            VATRate = ${updatedExpense.vatrate},
             Currency = '${updatedExpense.currency}',
-            ReceiptDate = '${convertToMySQLDate(updatedExpense.receiptDate)}'
-        WHERE ReceiptNumber = ${receiptNumber};`;
+            ReceiptDate = '${convertToMySQLDate(updatedExpense.receiptdate)}'
+        WHERE ReceiptNumber = ${updatedExpense.receiptnumber};`;
     return sendQuery(query);
 }
 
