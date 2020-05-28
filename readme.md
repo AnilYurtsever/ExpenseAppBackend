@@ -1,6 +1,6 @@
 # Expense App
 
-### Database initialization (execute as sudo)
+### MySQL database initialization (execute as sudo)
 * CREATE DATABASE ExpenseDatabase;
 * CREATE USER 'admin'@'localhost' IDENTIFIED BY 'admin';
 * GRANT ALL PRIVILEGES ON ExpenseDatabase.* TO 'admin'@'localhost' IDENTIFIED BY 'admin';
