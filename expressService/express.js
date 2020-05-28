@@ -29,11 +29,23 @@ function createExpenseHandler() {
                         })
                     }
                 ).catch(
-                    (error) => {
-                        response.status(500);
-                        response.send({
-                            status: "Failed to create expense!"
-                        });
+                    (err) => {
+                        if (err.errno === 1062) {
+                            response.status(400);
+                            response.send({
+                                status: "There is another expense with the same receipt number!"
+                            });
+                        } else if (err.errno === "ECONNREFUSED") {
+                            response.status(500);
+                            response.send({
+                                status: "Can't access to the database!"
+                            });
+                        } else {
+                            response.status(500);
+                            response.send({
+                                status: "Something happened!"
+                            });
+                        }
                     }
                 );
             }
@@ -50,11 +62,17 @@ function getExpensesHandler() {
                 response.send(result);
             }
         ).catch(
-            (error) => {
+            (err) => {
                 response.status(500);
-                response.send({
-                    status: "Failed to get expenses!"
-                });
+                if (err.errno === 'ECONNREFUSED') {
+                    response.send({
+                        status: "Can't access to the database!"
+                    });
+                } else {
+                    response.send({
+                        status: "Something happened!"
+                    });
+                }
             }
         );
     });
@@ -63,7 +81,6 @@ function getExpensesHandler() {
 function updateExpenseHandler() {
     app.put("/expense/update", (request, response) => {
         const headers = request.headers;
-        console.log(headers);
         if (!isExpenseDataValidForUpdate(headers)) {
             response.status(400);
             response.send({
@@ -85,11 +102,17 @@ function updateExpenseHandler() {
                         });
                     }
                 ).catch(
-                    () => {
+                    (error) => {
                         response.status(500);
-                        response.send({
-                            status: "Failed to update expense!"
-                        });
+                        if (err.errno === 'ECONNREFUSED') {
+                            response.send({
+                                status: "Can't access to the database!"
+                            });
+                        } else {
+                            response.send({
+                                status: "Something happened!"
+                            });
+                        }
                     }
                 )
             }
@@ -116,12 +139,95 @@ function deleteExpenseHandler() {
             ).catch(
                 () => {
                     response.status(500);
-                    response.send({
-                        status: "Failed to delete expense!"
-                    });
+                    if (err.errno === 'ECONNREFUSED') {
+                        response.send({
+                            status: "Can't access to the database!"
+                        });
+                    } else {
+                        response.send({
+                            status: "Something happened!"
+                        });
+                    }
                 }
             )
         }
+    });
+}
+
+function createUserHandler() {
+    app.post("/user/create", (request, response) => {
+        const headers = request.headers;
+        if (headers.username.length < 5 || headers.password.length < 5) {
+            response.status(400);
+            response.send({
+                status: "Username or password too short!"
+            });
+        }
+        database.addUser(headers).then(
+            () => {
+                response.status(200);
+                response.send({
+                    status: "User created successfully!"
+                });
+            }
+        ).catch(
+            (err) => {
+                if (err.errno === 1062) {
+                    response.status(400);
+                    response.send({
+                        status: "This user already exists!"
+                    });
+                } else if (err.errno === "ECONNREFUSED") {
+                    response.status(500);
+                    response.send({
+                        status: "Can't access to the database!"
+                    });
+                } else {
+                    response.status(500);
+                    response.send({
+                        status: "Something happened!"
+                    });
+                }
+            }
+        );
+    });
+}
+
+function getUserHandler() {
+    app.get("/user/get", (request, response) => {
+        let headers = request.headers;
+        if (headers.username.length < 5 || headers.password.length < 5) {
+            response.status(400);
+            response.send({
+                status: "Username or password too short!"
+            });
+        }
+        database.getUser(headers).then(
+            (result) => {
+                if (result.length === 0) {
+                    response.status(400);
+                    response.send({
+                        status: "Invalid credentials!"
+                    });
+                }
+                result = result[0];
+                response.status(200);
+                response.send(result);
+            }
+        ).catch(
+        (err) => {
+            response.status(500);
+                if (err.errno === 'ECONNREFUSED') {
+                    response.send({
+                        status: "Can't access to the database!"
+                    });
+                } else {
+                    response.send({
+                        status: "Something happened!"
+                    });
+                }
+            }
+        );
     });
 }
 
