@@ -8,48 +8,64 @@ app.use(cors());
 function createExpenseHandler() {
     app.post("/expense/create", (request, response) => {
         const headers = request.headers;
-        if (!isExpenseDataValidForCreate(headers)) {
-            response.status(400);
-            response.send({
-                status: "Missing property in the request object!"
-            });
-        } else {
-            const expense = headers;
-            if (!isExpenseValid(expense)) {
-                response.status(400);
-                response.send({
-                   status: "Wrong/inconsistent expense data!"
-                });
-            } else {
-                database.addExpense(expense).then(
-                    () => {
-                        response.status(200);
+        isUserExist(headers).then(
+            (data) => {
+                if (data.error) {
+                    response.status(500);
+                    response.send({
+                        status: "Something happened with the database!"
+                    });
+                } else if (!data.error && !data.ok) {
+                    response.status(400);
+                    response.send({
+                        status: "Invalid user credentials!"
+                    });
+                } else if (data.ok) {
+                    if (!isExpenseDataValidForCreate(headers)) {
+                        response.status(400);
                         response.send({
-                            status: "Expense successfully created!"
-                        })
-                    }
-                ).catch(
-                    (err) => {
-                        if (err.errno === 1062) {
+                            status: "Missing property in the request object!"
+                        });
+                    } else {
+                        const expense = headers;
+                        if (!isExpenseValid(expense)) {
                             response.status(400);
                             response.send({
-                                status: "There is another expense with the same receipt number!"
-                            });
-                        } else if (err.errno === "ECONNREFUSED") {
-                            response.status(500);
-                            response.send({
-                                status: "Can't access to the database!"
+                                status: "Wrong/inconsistent expense data!"
                             });
                         } else {
-                            response.status(500);
-                            response.send({
-                                status: "Something happened!"
-                            });
+                            database.addExpense(expense).then(
+                                () => {
+                                    response.status(200);
+                                    response.send({
+                                        status: "Expense successfully created!"
+                                    })
+                                }
+                            ).catch(
+                                (err) => {
+                                    if (err.errno === 1062) {
+                                        response.status(400);
+                                        response.send({
+                                            status: "There is another expense with the same receipt number!"
+                                        });
+                                    } else if (err.errno === "ECONNREFUSED") {
+                                        response.status(500);
+                                        response.send({
+                                            status: "Can't access to the database!"
+                                        });
+                                    } else {
+                                        response.status(500);
+                                        response.send({
+                                            status: "Something happened!"
+                                        });
+                                    }
+                                }
+                            );
                         }
                     }
-                );
+                }
             }
-        }
+        );
     });
 }
 
@@ -81,42 +97,58 @@ function getExpensesHandler() {
 function updateExpenseHandler() {
     app.put("/expense/update", (request, response) => {
         const headers = request.headers;
-        if (!isExpenseDataValidForUpdate(headers)) {
-            response.status(400);
-            response.send({
-                status: "Missing property in the request object!"
-            });
-        } else {
-            const expense = headers;
-            if (!isExpenseValid(expense)) {
-                response.status(400);
-                response.send({
-                    status: "Wrong/inconsistent expense data!"
-                });
-            } else {
-                database.updateExpense(expense).then(
-                    () => {
-                        response.status(200);
+        isUserExist(headers).then(
+            (data) => {
+                if (data.error) {
+                    response.status(500);
+                    response.send({
+                        status: "Something happened with the database!"
+                    });
+                } else if (!data.error && !data.ok) {
+                    response.status(400);
+                    response.send({
+                        status: "Invalid user credentials!"
+                    });
+                } else if (data.ok) {
+                    if (!isExpenseDataValidForUpdate(headers)) {
+                        response.status(400);
                         response.send({
-                            status: "Expense successfully updated!"
+                            status: "Missing property in the request object!"
                         });
-                    }
-                ).catch(
-                    (error) => {
-                        response.status(500);
-                        if (err.errno === 'ECONNREFUSED') {
+                    } else {
+                        const expense = headers;
+                        if (!isExpenseValid(expense)) {
+                            response.status(400);
                             response.send({
-                                status: "Can't access to the database!"
+                                status: "Wrong/inconsistent expense data!"
                             });
                         } else {
-                            response.send({
-                                status: "Something happened!"
-                            });
+                            database.updateExpense(expense).then(
+                                () => {
+                                    response.status(200);
+                                    response.send({
+                                        status: "Expense successfully updated!"
+                                    });
+                                }
+                            ).catch(
+                                (error) => {
+                                    response.status(500);
+                                    if (err.errno === 'ECONNREFUSED') {
+                                        response.send({
+                                            status: "Can't access to the database!"
+                                        });
+                                    } else {
+                                        response.send({
+                                            status: "Something happened!"
+                                        });
+                                    }
+                                }
+                            )
                         }
                     }
-                )
+                }
             }
-        }
+        );
     });
 }
 
@@ -275,6 +307,33 @@ function isExpenseFilterValid(headers) {
 
 function isReceiptNumberValid(receiptNumber) {
     return receiptNumber / 100000 >= 1;
+}
+
+async function isUserExist(headers) {
+    return new Promise((resolve) => {
+        database.getUser(headers).then(
+            (result) => {
+                if (result.length === 0) {
+                    resolve({
+                        ok: false,
+                        error: false
+                    });
+                } else {
+                    resolve({
+                        ok: true,
+                        error: false
+                    });
+                }
+            }
+        ).catch(
+            () => {
+                resolve({
+                    ok: false,
+                    error: true
+                });
+            }
+        );
+    });
 }
 
 module.exports = {startHandlers};
