@@ -4,7 +4,8 @@ const config = {
     host: 'localhost',
     user: 'admin',
     password: 'admin',
-    database: 'ExpenseDatabase'
+    database: 'ExpenseDatabase',
+    dateStrings: 'date'
 };
 
 async function sendQuery(query) {
@@ -108,9 +109,38 @@ function deleteExpense(receiptNumber) {
     return sendQuery(query);
 }
 
+function addUser(user) {
+    const query = `
+        INSERT INTO User (
+            UserName,
+            Password
+        ) VALUES (
+            '${user.username}',
+            '${user.password}'
+        );`;
+    return sendQuery(query);
+}
+
+function getUser(userData) {
+    const query = `
+        SELECT * FROM User
+        WHERE
+            UserName = '${userData.username}'
+            AND 
+            Password = '${userData.password}';
+    `;
+    return sendQuery(query);
+}
+
 function convertToMySQLDate(date) {
     date = new Date(date);
     return date.toISOString().slice(0, 10);
 }
 
-module.exports = {addExpense, getExpenses, updateExpense, deleteExpense};
+module.exports = {addExpense,
+    getExpenses,
+    updateExpense,
+    deleteExpense,
+    addUser,
+    getUser
+};
