@@ -236,6 +236,8 @@ function startHandlers() {
     getExpensesHandler();
     updateExpenseHandler();
     deleteExpenseHandler();
+    createUserHandler();
+    getUserHandler();
     app.listen(3000);
 }
 
