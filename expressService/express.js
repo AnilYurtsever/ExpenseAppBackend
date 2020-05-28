@@ -194,34 +194,40 @@ function createUserHandler() {
             response.send({
                 status: "Username or password too short!"
             });
-        }
-        database.addUser(headers).then(
-            () => {
-                response.status(200);
-                response.send({
-                    status: "User created successfully!"
-                });
-            }
-        ).catch(
-            (err) => {
-                if (err.errno === 1062) {
-                    response.status(400);
+        } else if (headers.password !== headers.passwordagain) {
+            response.status(400);
+            response.send({
+                status: "Passwords do not match!"
+            });
+        } else {
+            database.addUser(headers).then(
+                () => {
+                    response.status(200);
                     response.send({
-                        status: "This user already exists!"
-                    });
-                } else if (err.errno === "ECONNREFUSED") {
-                    response.status(500);
-                    response.send({
-                        status: "Can't access to the database!"
-                    });
-                } else {
-                    response.status(500);
-                    response.send({
-                        status: "Something happened!"
+                        status: "User created successfully!"
                     });
                 }
-            }
-        );
+            ).catch(
+                (err) => {
+                    if (err.errno === 1062) {
+                        response.status(400);
+                        response.send({
+                            status: "This user already exists!"
+                        });
+                    } else if (err.errno === "ECONNREFUSED") {
+                        response.status(500);
+                        response.send({
+                            status: "Can't access to the database!"
+                        });
+                    } else {
+                        response.status(500);
+                        response.send({
+                            status: "Something happened!"
+                        });
+                    }
+                }
+            );
+        }
     });
 }
 
